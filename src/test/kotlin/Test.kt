@@ -119,12 +119,60 @@ class RunOnContextJUnitTestSuite {
         }))
 
         with(getServiceProxy<FibonacciSvc>(vertx, channel, "fibonacci")) {
-            context.assertEquals(1, fibonacci(1))
-            context.assertEquals(1, fibonacci(2))
-            context.assertEquals(2, fibonacci(3))
-            context.assertEquals(3, fibonacci(4))
-            context.assertEquals(5, fibonacci(5))
-            context.assertEquals(8, fibonacci(6))
+            context.assertEquals(1L, fibonacci(1))
+            context.assertEquals(1L, fibonacci(2))
+            context.assertEquals(2L, fibonacci(3))
+            context.assertEquals(3L, fibonacci(4))
+            context.assertEquals(5L, fibonacci(5))
+            context.assertEquals(8L, fibonacci(6))
+        }
+    }
+
+    data class Sample(val a: Int = 0, val b: String = "")
+
+    interface ComplexSvc {
+        suspend fun f(v: Sample): String
+    }
+
+    // Svc with custom type argument
+    @Test
+    fun test6(context: TestContext) = r(context) {
+        val channel = "test6"
+
+        vertx.deployVerticle(RpcServerVerticle(channel).register("hello", object {
+            @Suppress("unused")
+            fun f(v: Sample): String = "${v.a}, ${v.b}!"
+        }))
+
+        context.assertEquals("42, world!", getServiceProxy<ComplexSvc>(vertx, channel, "hello").f(Sample(42, "world")))
+    }
+
+    interface NullableSvc {
+        suspend fun f1(a: Int, b: String?): String
+
+        suspend fun f2(a: Int): String?
+    }
+
+    // Svc with nullable argument and return value
+    @Test
+    fun test7(context: TestContext) = r(context) {
+        val channel = "test7"
+
+        vertx.deployVerticle(RpcServerVerticle(channel).register("hello", @Suppress("unused") object {
+            fun f1(a: Int, b: String?): String {
+                return "$a, ${b ?: "X"}"
+            }
+
+            fun f2(a: Int): String? {
+                return if (a == 0) null else a.toString()
+            }
+        }))
+
+        with(getServiceProxy<NullableSvc>(vertx, channel, "hello")) {
+            context.assertEquals("42, world", f1(42, "world"))
+            context.assertEquals("42, X", f1(42, null))
+            context.assertEquals("10", f2(10))
+            context.assertNull(f2(0))
         }
     }
 }

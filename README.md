@@ -50,5 +50,4 @@ TODO
 ----
 
 * Function overloading support.
-* Serialize/deserialize with more efficient way instead of JSON.
 * Call tracing and debugging.
