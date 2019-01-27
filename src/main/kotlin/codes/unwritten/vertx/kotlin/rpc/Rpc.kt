@@ -56,6 +56,7 @@ fun ByteArray.toRpcResponse(): RpcResponse = ByteArrayInputStream(this).use {
 
 /**
  * RpcServerVerticle hosts all RPC service objects
+ * @constructor Create a Verticle to host RPC services
  * @param channel Name of the eventbus channel
  */
 class RpcServerVerticle(private val channel: String) : CoroutineVerticle() {
@@ -101,6 +102,7 @@ class RpcServerVerticle(private val channel: String) : CoroutineVerticle() {
      * Register the service object
      * @param name Name of the service
      * @param impl Object which implements the service
+     * @return The RpcServerVerticle instance to support fluent call
      */
     fun <T : Any> register(name: String, impl: T): RpcServerVerticle {
         services[name] = RpcServer.instance(impl)
@@ -113,6 +115,7 @@ class RpcServerVerticle(private val channel: String) : CoroutineVerticle() {
  * @param vertx Vertx instance
  * @param channel Name of the channel where RPC service listening
  * @param name Name of the service
+ * @return RPC proxy object implements T
  */
 inline fun <reified T : Any> getServiceProxy(vertx: Vertx, channel: String, name: String) =
         Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, args: Array<Any?> ->
