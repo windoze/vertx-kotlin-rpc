@@ -115,6 +115,12 @@ svc.hello("world").setHandler(ar -> {
 
 ```
 
+Notes
+-----
+
+All arguments and returned values are serialized/deserialized by [Kryo](https://github.com/EsotericSoftware/kryo),
+refer to its documentations for more details.
+
 
 Changelog
 ---------

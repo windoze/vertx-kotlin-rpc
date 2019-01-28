@@ -119,6 +119,11 @@ svc.hello("world").setHandler(ar -> {
 
 ```
 
+Notes
+-----
+
+所有的参数和返回值都由[Kryo](https://github.com/EsotericSoftware/kryo)进行序列化和反序列化，请参阅文档以了解更多的细节。
+
 Changelog
 ---------
 * 0.4: Java API
