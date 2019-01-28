@@ -1,5 +1,7 @@
 Vertx Kotlin RPC over EventBus
 ==============================
+[![CircleCI](https://circleci.com/gh/windoze/vertx-kotlin-rpc.svg?style=svg)](https://circleci.com/gh/windoze/vertx-kotlin-rpc)
+[ ![Download](https://api.bintray.com/packages/windoze/maven/vertx-kotlin-rpc/images/download.svg) ](https://bintray.com/windoze/maven/vertx-kotlin-rpc/_latestVersion)
 
 A minimalist RPC framework for Vertx/Kotlin.
 
