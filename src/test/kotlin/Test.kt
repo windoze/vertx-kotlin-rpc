@@ -1,9 +1,12 @@
 import codes.unwritten.vertx.kotlin.rpc.RpcServerVerticle
-import codes.unwritten.vertx.kotlin.rpc.getServiceProxy
+import codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getAsyncServiceProxy
+import codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getServiceProxy
+import io.vertx.core.Future
 import io.vertx.core.Vertx
 import io.vertx.ext.unit.TestContext
 import io.vertx.ext.unit.junit.RunTestOnContext
 import io.vertx.ext.unit.junit.VertxUnitRunner
+import io.vertx.kotlin.coroutines.await
 import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -173,6 +176,26 @@ class RunOnContextJUnitTestSuite {
             context.assertEquals("42, X", f1(42, null))
             context.assertEquals("10", f2(10))
             context.assertNull(f2(0))
+        }
+    }
+
+    interface AsyncHelloSvc {
+        fun hello(name: String): Future<String>
+    }
+
+    // Async svc proxy
+    @Test
+    fun test8(context: TestContext) = r(context) {
+        val channel = "test8"
+
+        vertx.deployVerticle(RpcServerVerticle(channel).register("hello", @Suppress("unused") object {
+            fun hello(name: String): String {
+                return "Hello, $name!"
+            }
+        }))
+
+        with(getAsyncServiceProxy(vertx, channel, "hello", AsyncHelloSvc::class.java)) {
+            context.assertEquals("Hello, world!", hello("world").await())
         }
     }
 }

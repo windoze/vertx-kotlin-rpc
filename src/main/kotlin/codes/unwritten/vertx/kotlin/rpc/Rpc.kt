@@ -4,6 +4,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import io.vertx.core.AsyncResult
+import io.vertx.core.Future
 import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.eventbus.Message
@@ -141,3 +142,47 @@ inline fun <reified T : Any> getServiceProxy(vertx: Vertx, channel: String, name
                 null
             }
         } as T
+
+/**
+ * Dynamically create the async service proxy object for the given interface
+ * Every method in the interface must return futures instead of direct value.
+ *
+ * @param vertx Vertx instance
+ * @param channel Name of the channel where RPC service listening
+ * @param name Name of the service
+ * @return Async RPC proxy object implements T
+ */
+@Suppress("UNCHECKED_CAST")
+fun <T : Any> getAsyncServiceProxy(vertx: Vertx, channel: String, name: String, clazz: Class<T>) =
+        Proxy.newProxyInstance(clazz.classLoader, arrayOf(clazz)) { _, method, args: Array<Any?> ->
+            val future = Future.future<Message<ByteArray>>()
+            vertx.eventBus().send(channel, RpcRequest(name, method.name, args).toBytes(), future.completer())
+            future.map {
+                it.body().toRpcResponse().response
+            }
+        } as T
+
+object ServiceProxyFactory {
+    /**
+     * Dynamically create the service proxy object for the given interface
+     * @param vertx Vertx instance
+     * @param channel Name of the channel where RPC service listening
+     * @param name Name of the service
+     * @return RPC proxy object implements T
+     */
+    @JvmStatic
+    @Suppress("UNCHECKED_CAST")
+    fun <T : Any> getAsyncServiceProxy(vertx: Vertx, channel: String, name: String, clazz: Class<T>) = codes.unwritten.vertx.kotlin.rpc.getAsyncServiceProxy(vertx, channel, name, clazz)
+
+    /**
+     * Dynamically create the async service proxy object for the given interface
+     * Every method in the interface must return futures instead of direct value.
+     *
+     * @param vertx Vertx instance
+     * @param channel Name of the channel where RPC service listening
+     * @param name Name of the service
+     * @return Async RPC proxy object implements T
+     */
+    @JvmStatic
+    inline fun <reified T : Any> getServiceProxy(vertx: Vertx, channel: String, name: String) = codes.unwritten.vertx.kotlin.rpc.getServiceProxy<T>(vertx, channel, name)
+}

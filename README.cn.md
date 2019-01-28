@@ -4,7 +4,45 @@ Vertx Kotlin RPC over EventBus
 极简的Vertx/Kotlin RPC框架。
 
 
-创建RPC service
+开始
+----
+
+Maven包已发布到jCenter，请先按照[说明](https://bintray.com/beta/#/bintray/jcenter)配置maven或gradle的设置。
+
+Maven:
+```xml
+<dependency>
+    <groupId>codes.unwritten</groupId>
+    <artifactId>vertx-kotlin-rpc</artifactId>
+    <version>0.3</version>
+    <type>pom</type>
+</dependency>
+```
+
+Gradle:
+```Groovy
+compile 'codes.unwritten:vertx-kotlin-rpc:0.3'
+```
+<hr>
+
+测试版本发布到[Bintray/windoze](https://bintray.com/beta/#/windoze/maven/vertx-kotlin-rpc)。
+
+Maven:
+```xml
+<dependency>
+    <groupId>codes.unwritten</groupId>
+    <artifactId>vertx-kotlin-rpc</artifactId>
+    <version>0.4</version>
+    <type>pom</type>
+</dependency>
+```
+
+Gradle:
+```Groovy
+compile 'codes.unwritten:vertx-kotlin-rpc:0.4'
+```
+
+在Kotlin中创建RPC service
 -----------------------
 
 ```kotlin
@@ -25,8 +63,9 @@ vertx.deployVerticle(RpcServerVerticle("test-channel")
 ```
 
 
-调用RPC service
+在Kotlin中调用RPC service
 ---------------------
+
 ```kotlin
 import codes.unwritten.vertx.kotlin.rpc.getServiceProxy
 
@@ -46,6 +85,58 @@ val svc: HelloSvc = getServiceProxy(vertx, "test-channel", "hello")
 assertEqual("Hello, world!", svc.hello("world"))
 ```
 
+
+在Java中创建RPC service
+----------------------
+
+```java
+import codes.unwritten.vertx.kotlin.rpc.RpcServerVerticle;
+
+// ...
+
+// 实现类不返回Future<T>，直接返回T
+public class HelloSvcImpl {
+    public String hello(String name) {
+        return "Hello, " + name + "!";
+    }
+}
+
+// ...
+
+vertx.deployVerticle((new RpcServerVerticle("test-channel"))
+    .register("hello", new HelloSvcImpl()));
+```
+
+在Java中调用RPC service
+-------------------------------
+Java没有suspend函数，所以服务接口中的每个方法必须返回`Future<T>`而不是`T`。
+```Java
+import io.vertx.core.Future;
+import codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncServiceProxy;
+
+// ...
+
+// 方法必须返回Future<T>而不是T
+interface AsyncHelloSvc {
+    Future<String> hello(String world);
+}
+
+// ...
+
+AsyncHelloSvc svc = getAsyncServiceProxy(vertx, "test-channel", "hello", AsyncHelloSvc.class);
+svc.hello("world").setHandler(ar -> {
+    if (ar.succeeded()) {
+        assertEquals("Hello, world!", ar.result());
+    } else {
+        // Error handling
+    }
+});
+
+```
+
+Changelog
+---------
+* 0.4: Java API
 
 TODO
 ----

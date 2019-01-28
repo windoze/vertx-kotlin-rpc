@@ -18,7 +18,7 @@ plugins {
 }
 
 group 'codes.unwritten'
-version '0.3'
+version '0.4'
 
 sourceCompatibility = 1.8
 
@@ -41,6 +41,8 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+compileTestJava {
 }
 task sourceJar(type: Jar) {
     classifier "sources"
@@ -80,9 +82,21 @@ publishing {
 
             artifact sourceJar
 
-            groupId 'codes.unwritten'
-            artifactId 'vertx-kotlin-rpc'
-            version '0.3'
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('description', "A minimalist RPC framework for Vertx/Kotlin.")
+                root.children().last() + pomConfig
+
+                def dependenciesNode = root.appendNode('dependencies')
+                configurations.compile.allDependencies.each {
+                    if (it.group && it.name && it.version) {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                    }
+                }
+            }
         }
     }
 }
@@ -116,10 +130,10 @@ bintray {
         licenses = ['WTFPL']
         publicDownloadNumbers = true
         version {
-            name = "0.3"
-            desc = "Vertx Kotlin RPC 0.3"
+            name = "0.4"
+            desc = "Vertx Kotlin RPC 0.4"
             released = new Date()
-            vcsTag = "0.3.0"
+            vcsTag = "0.4.0"
         }
     }
 }
