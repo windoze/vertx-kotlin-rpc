@@ -18,7 +18,7 @@ plugins {
 }
 
 group 'codes.unwritten'
-version '0.4'
+version '0.5'
 
 sourceCompatibility = 1.8
 
@@ -30,6 +30,8 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
     compile "io.vertx:vertx-lang-kotlin-coroutines:$vertx_version"
+    compile "io.vertx:vertx-web:$vertx_version"
+    compile "io.vertx:vertx-web-client:$vertx_version"
     compile "com.esotericsoftware:kryo:5.0.0-RC1"
 
     testCompile "io.vertx:vertx-unit:$vertx_version"
@@ -66,7 +68,7 @@ publishing {
 
             groupId 'codes.unwritten'
             artifactId 'vertx-kotlin-rpc'
-            version '0.4'
+            version '0.5'
         }
     }
 }
@@ -100,10 +102,10 @@ bintray {
         licenses = ['WTFPL']
         publicDownloadNumbers = true
         version {
-            name = "0.4"
-            desc = "Vertx Kotlin RPC 0.4"
+            name = "0.5"
+            desc = "Vertx Kotlin RPC 0.5"
             released = new Date()
-            vcsTag = "0.4.0"
+            vcsTag = "0.5.0"
         }
     }
 }

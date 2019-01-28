@@ -16,7 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(VertxUnitRunner::class)
-class RunOnContextJUnitTestSuite {
+class KotlinTest {
     @Rule
     @JvmField
     var rule = RunTestOnContext()

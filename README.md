@@ -16,14 +16,14 @@ Maven:
 <dependency>
     <groupId>codes.unwritten</groupId>
     <artifactId>vertx-kotlin-rpc</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
     <type>pom</type>
 </dependency>
 ```
 
 Gradle:
 ```Groovy
-compile 'codes.unwritten:vertx-kotlin-rpc:0.4'
+compile 'codes.unwritten:vertx-kotlin-rpc:0.5'
 ```
 
 To create a RPC service
@@ -46,7 +46,6 @@ vertx.deployVerticle(RpcServerVerticle("test-channel")
     .register("hello", HelloSvcImpl()))
 ```
 
-
 To call a RPC service
 ---------------------
 ```kotlin
@@ -65,6 +64,53 @@ interface HelloSvc {
 val svc: HelloSvc = getServiceProxy(vertx, "test-channel", "hello")
 // Call the service
 assertEqual("Hello, world!", svc.hello("world"))
+```
+
+To create a HTTP RPC service
+----------------------------
+```kotlin
+import io.vertx.core.Vertx
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.kotlin.coroutines.CoroutineVerticle
+import codes.unwritten.vertx.kotlin.rpc.HttpRpcHandler
+
+// ...
+class SomeVerticle: CoroutineVerticle() {
+    override suspend fun start() {
+        // ...
+        val router = Router.router(vertx)
+        
+        // Make sure body handler is enabled
+        router.route().handler(BodyHandler.create())
+        
+        // Only POST method is supported
+        router.post("/some-path").handler(HttpRpcHandler().register("hello", object {
+            fun hello(name: String): String = "Hello, $name!"
+        }))
+        // Start HTTP server, etc.
+        // ...
+    }
+}
+```
+
+To call a HTTP RPC service
+--------------------------
+```kotlin
+import codes.unwritten.vertx.kotlin.rpc.getHttpServiceProxy
+
+interface HelloSvc {
+    // Must be suspend, otherwise exceptions will be thrown on invocation.
+    suspend fun hello(name: String): String
+}
+
+// ...
+
+// Get the service proxy object from a URL
+val svc = getHttpServiceProxy<HelloSvc>(vertx, "http://127.0.0.1:8080/some-path", "hello")
+// Call the service
+assertEqual("Hello, world!", svc.hello("world"))
+
 ```
 
 To create a RPC service in Java
@@ -100,11 +146,45 @@ import static codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getAsyncServi
 // Method must return Future<T> instead of T
 interface AsyncHelloSvc {
     Future<String> hello(String world);
-};
+}
 
 // ...
 
 AsyncHelloSvc svc = getAsyncServiceProxy(vertx, "test-channel", "hello", AsyncHelloSvc.class);
+svc.hello("world").setHandler(ar -> {
+    if (ar.succeeded()) {
+        assertEquals("Hello, world!", ar.result());
+    } else {
+        // Error handling
+    }
+});
+
+```
+
+To create a HTTP RPC service in Java
+------------------------------------
+TODO:
+
+
+To call a HTTP RPC service from Java
+------------------------------------
+
+Java doesn't have suspend functions, make sure every function in the service
+interface returns `Future<T>` instead of `T`.
+```Java
+import io.vertx.core.Future;
+import static codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncHttpServiceProxy;
+
+// ...
+
+// Method must return Future<T> instead of T
+interface AsyncHelloSvc {
+    Future<String> hello(String world);
+}
+
+// ...
+
+AsyncHelloSvc svc = getAsyncHttpServiceProxy(vertx, "http://127.0.0.1:8080/some-path", "hello", AsyncHelloSvc.class);
 svc.hello("world").setHandler(ar -> {
     if (ar.succeeded()) {
         assertEquals("Hello, world!", ar.result());

@@ -16,14 +16,14 @@ Maven:
 <dependency>
     <groupId>codes.unwritten</groupId>
     <artifactId>vertx-kotlin-rpc</artifactId>
-    <version>0.4</version>
+    <version>0.5</version>
     <type>pom</type>
 </dependency>
 ```
 
 Gradle:
 ```Groovy
-compile 'codes.unwritten:vertx-kotlin-rpc:0.4'
+compile 'codes.unwritten:vertx-kotlin-rpc:0.5'
 ```
 <hr>
 
@@ -70,6 +70,52 @@ val svc: HelloSvc = getServiceProxy(vertx, "test-channel", "hello")
 assertEqual("Hello, world!", svc.hello("world"))
 ```
 
+在Kotlin中创建HTTP RPC service
+----------------------------
+```kotlin
+import io.vertx.core.Vertx
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.kotlin.coroutines.CoroutineVerticle
+import codes.unwritten.vertx.kotlin.rpc.HttpRpcHandler
+
+// ...
+class SomeVerticle: CoroutineVerticle() {
+    override suspend fun start() {
+        // ...
+        val router = Router.router(vertx)
+        
+        // 必须打开BodyHandler
+        router.route().handler(BodyHandler.create())
+        
+        // 只支持POST method
+        router.post("/some-path").handler(HttpRpcHandler().register("hello", object {
+            fun hello(name: String): String = "Hello, $name!"
+        }))
+        // 启动HTTP server
+        // ...
+    }
+}
+```
+
+在Kotlin中调用HTTP RPC service
+--------------------------
+```kotlin
+import codes.unwritten.vertx.kotlin.rpc.getHttpServiceProxy
+
+interface HelloSvc {
+    // Must be suspend, otherwise exceptions will be thrown on invocation.
+    suspend fun hello(name: String): String
+}
+
+// ...
+
+// 用指定的URL创建服务的Proxy对象
+val svc = getHttpServiceProxy<HelloSvc>(vertx, "http://127.0.0.1:8080/some-path", "hello")
+// 调用HTTP RPC服务
+assertEqual("Hello, world!", svc.hello("world"))
+
+```
 
 在Java中创建RPC service
 ----------------------
@@ -97,7 +143,7 @@ vertx.deployVerticle((new RpcServerVerticle("test-channel"))
 Java没有suspend函数，所以服务接口中的每个方法必须返回`Future<T>`而不是`T`。
 ```Java
 import io.vertx.core.Future;
-import static codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncServiceProxy;
+import static codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getAsyncServiceProxy;
 
 // ...
 
@@ -109,6 +155,38 @@ interface AsyncHelloSvc {
 // ...
 
 AsyncHelloSvc svc = getAsyncServiceProxy(vertx, "test-channel", "hello", AsyncHelloSvc.class);
+svc.hello("world").setHandler(ar -> {
+    if (ar.succeeded()) {
+        assertEquals("Hello, world!", ar.result());
+    } else {
+        // Error handling
+    }
+});
+
+```
+
+在Java中创建HTTP RPC service
+---------------------------
+（略）
+
+
+在Java中调用HTTP RPC service
+---------------------------
+Java没有suspend函数，所以服务接口中的每个方法必须返回`Future<T>`而不是`T`。
+```Java
+import io.vertx.core.Future;
+import static codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncHttpServiceProxy;
+
+// ...
+
+// 方法必须返回Future<T>而不是T
+interface AsyncHelloSvc {
+    Future<String> hello(String world);
+}
+
+// ...
+
+AsyncHelloSvc svc = getAsyncHttpServiceProxy(vertx, "http://127.0.0.1:8080/some-path", "hello", AsyncHelloSvc.class);
 svc.hello("world").setHandler(ar -> {
     if (ar.succeeded()) {
         assertEquals("Hello, world!", ar.result());
