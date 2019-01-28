@@ -1,5 +1,8 @@
 import codes.unwritten.vertx.kotlin.rpc.RpcServerVerticle;
-import codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory;
+
+import static codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getAsyncServiceProxy;
+
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -40,7 +43,7 @@ public class JavaTest {
 
         Async async = context.async();
         vertx.deployVerticle((new RpcServerVerticle(channel)).register("hello", new HelloSvcImpl()));
-        AsyncHelloSvc svc = ServiceProxyFactory.getAsyncServiceProxy(vertx, channel, "hello", AsyncHelloSvc.class);
+        AsyncHelloSvc svc = getAsyncServiceProxy(vertx, channel, "hello", AsyncHelloSvc.class);
         svc.hello("world").setHandler(ar -> {
             if (ar.succeeded()) {
                 context.assertEquals("Hello, world!", ar.result());
@@ -49,5 +52,69 @@ public class JavaTest {
             }
         });
         async.complete();
+    }
+
+    interface AsyncNullableSvc {
+        Future<String> f1(int a, String b);
+
+        Future<String> f2(int a);
+    }
+
+    public class NullableSvcImpl {
+        public String f1(int a, String b) {
+            return a + ", " + ((b == null) ? "X" : b);
+        }
+
+        public String f2(int a) {
+            if (a == 0) return null;
+            return Integer.toString(a);
+        }
+    }
+
+    // Nullable argument and return value
+    @Test
+    public void test2(TestContext context) {
+        final String channel = "test2";
+
+        try {
+            Async async = context.async();
+            vertx.deployVerticle((new RpcServerVerticle(channel)).register("hello", new NullableSvcImpl()));
+            AsyncNullableSvc svc = getAsyncServiceProxy(vertx, channel, "hello", AsyncNullableSvc.class);
+            svc.f1(42, "world").setHandler(ar -> {
+                if (ar.succeeded()) {
+                    context.assertEquals("42, world", ar.result());
+                } else {
+                    context.assertTrue(false);
+                }
+            });
+
+            svc.f1(42, null).setHandler(ar -> {
+                if (ar.succeeded()) {
+                    context.assertEquals("42, X", ar.result());
+                } else {
+                    context.assertTrue(false);
+                }
+            });
+
+            svc.f2(42).setHandler(ar -> {
+                if (ar.succeeded()) {
+                    context.assertEquals("42", ar.result());
+                } else {
+                    context.assertTrue(false);
+                }
+            });
+
+            svc.f2(0).setHandler(ar -> {
+                if (ar.succeeded()) {
+                    context.assertNull(ar.result());
+                } else {
+                    context.assertTrue(false);
+                }
+            });
+
+            async.complete();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 }
