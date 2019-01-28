@@ -1,0 +1,20 @@
+version: 2.0
+
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    steps:
+      - checkout
+      - restore_cache:
+          key: gradle-{{ checksum "build.gradle" }}
+      - run: gradle assemble
+      - run: gradle test
+      - run: gradle publishMavenKotlinPublicationToMavenLocal
+      - save_cache:
+        paths:
+          - ~/.gradle
+        key: gradle-{{ checksum "build.gradle" }}
+      - store_artifacts:
+        path: build/libs
+        destination: libs
