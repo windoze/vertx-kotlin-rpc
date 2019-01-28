@@ -16,24 +16,6 @@ Maven:
 <dependency>
     <groupId>codes.unwritten</groupId>
     <artifactId>vertx-kotlin-rpc</artifactId>
-    <version>0.3</version>
-    <type>pom</type>
-</dependency>
-```
-
-Gradle:
-```Groovy
-compile 'codes.unwritten:vertx-kotlin-rpc:0.3'
-```
-<hr>
-
-测试版本发布到[Bintray/windoze](https://bintray.com/beta/#/windoze/maven/vertx-kotlin-rpc)。
-
-Maven:
-```xml
-<dependency>
-    <groupId>codes.unwritten</groupId>
-    <artifactId>vertx-kotlin-rpc</artifactId>
     <version>0.4</version>
     <type>pom</type>
 </dependency>
@@ -43,6 +25,7 @@ Gradle:
 ```Groovy
 compile 'codes.unwritten:vertx-kotlin-rpc:0.4'
 ```
+<hr>
 
 在Kotlin中创建RPC service
 -----------------------

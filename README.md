@@ -16,23 +16,6 @@ Maven:
 <dependency>
     <groupId>codes.unwritten</groupId>
     <artifactId>vertx-kotlin-rpc</artifactId>
-    <version>0.3</version>
-    <type>pom</type>
-</dependency>
-```
-
-Gradle:
-```Groovy
-compile 'codes.unwritten:vertx-kotlin-rpc:0.3'
-```
-
-The testing version is published to [Bintray/windoze](https://bintray.com/beta/#/windoze/maven/vertx-kotlin-rpc).
-
-Maven:
-```xml
-<dependency>
-    <groupId>codes.unwritten</groupId>
-    <artifactId>vertx-kotlin-rpc</artifactId>
     <version>0.4</version>
     <type>pom</type>
 </dependency>
