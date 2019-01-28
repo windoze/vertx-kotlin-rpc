@@ -7,14 +7,15 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: gradle-{{ checksum "build.gradle" }}
+          key:
+            - gradle-{{ checksum "build.gradle" }}
       - run: gradle assemble
       - run: gradle test
       - run: gradle publishMavenKotlinPublicationToMavenLocal
       - save_cache:
-        paths:
-          - ~/.gradle
+          paths:
+            - ~/.gradle
         key: gradle-{{ checksum "build.gradle" }}
       - store_artifacts:
-        path: build/libs
-        destination: libs
+          path: build/libs
+          destination: libs
