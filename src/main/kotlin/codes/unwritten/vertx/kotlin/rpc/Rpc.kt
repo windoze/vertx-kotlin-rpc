@@ -9,6 +9,7 @@ import io.vertx.core.Handler
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.eventbus.Message
+import io.vertx.core.json.Json
 import io.vertx.ext.web.client.HttpRequest
 import io.vertx.ext.web.client.HttpResponse
 import io.vertx.ext.web.client.WebClient
@@ -45,7 +46,7 @@ fun ByteArray.toRpcRequest(): RpcRequest = ByteArrayInputStream(this).use {
 
 fun Buffer.toRpcRequest(): RpcRequest = bytes.toRpcRequest()
 
-data class RpcResponse(val response: Any? = null) {
+data class RpcResponse(val response: Any? = null, val trace: Json? = null) {
     fun toBytes(): ByteArray = ByteArrayOutputStream().use {
         val out = Output(it)
         kryo.writeObject(out, this)
@@ -62,6 +63,23 @@ fun ByteArray.toRpcResponse(): RpcResponse = ByteArrayInputStream(this).use {
 
 fun Buffer.toRpcResponse(): RpcResponse = bytes.toRpcResponse()
 
+inline fun <reified T : Any> getProxyWithBlock(name: String, crossinline block: (RpcRequest, Continuation<Any?>) -> Unit) =
+        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, args: Array<Any?> ->
+            val lastArg = args.lastOrNull()
+            if (lastArg is Continuation<*>) {
+                // The last argument of a suspend function is the Continuation object
+                @Suppress("UNCHECKED_CAST") val cont = lastArg as Continuation<Any?>
+                val argsButLast = args.take(args.size - 1)
+                // Call the block with the request and the continuation
+                block(RpcRequest(name, method.name, argsButLast.toTypedArray()), cont)
+                // Suspend the coroutine to wait for the reply
+                COROUTINE_SUSPENDED
+            } else {
+                // The function is not suspend
+                null
+            }
+        } as T
+
 /**
  * Dynamically create the service proxy object for the given interface
  * @param vertx Vertx instance
@@ -70,28 +88,15 @@ fun Buffer.toRpcResponse(): RpcResponse = bytes.toRpcResponse()
  * @return RPC proxy object implements T
  */
 inline fun <reified T : Any> getServiceProxy(vertx: Vertx, channel: String, name: String) =
-        Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, args: Array<Any?> ->
-            val lastArg = args.lastOrNull()
-            if (lastArg is Continuation<*>) {
-                // The last argument of a suspend function is the Continuation object
-                @Suppress("UNCHECKED_CAST") val cont = lastArg as Continuation<Any?>
-                val argsButLast = args.take(args.size - 1)
-                // Send request to the given channel on the event bus
-                vertx.eventBus().send(channel, RpcRequest(name, method.name, argsButLast.toTypedArray()).toBytes(),
-                        Handler<AsyncResult<Message<ByteArray>>> { event ->
-                            // Resume the suspended coroutine on reply
-                            if (event?.succeeded() == true) {
-                                cont.resume(event.result().body().toRpcResponse().response)
-                            } else {
-                                cont.resumeWithException(event?.cause() ?: Exception("Unknown error"))
-                            }
-                        })
-                // Suspend the coroutine to wait for the reply
-                COROUTINE_SUSPENDED
-            } else {
-                // The function is not suspend
-                null
-            }
+        getProxyWithBlock(name) { req, cont ->
+            vertx.eventBus().send(channel, req.toBytes(), Handler<AsyncResult<Message<ByteArray>>> { event ->
+                // Resume the suspended coroutine on reply
+                if (event?.succeeded() == true) {
+                    cont.resume(event.result().body().toRpcResponse().response)
+                } else {
+                    cont.resumeWithException(event?.cause() ?: Exception("Unknown error"))
+                }
+            })
         } as T
 
 /**
@@ -124,30 +129,18 @@ fun <T : Any> getAsyncServiceProxy(vertx: Vertx, channel: String, name: String, 
  */
 inline fun <reified T : Any> getHttpServiceProxy(vertx: Vertx, endpoint: String, name: String, crossinline requestBuilder: (HttpRequest<Buffer>) -> Any? = { _ -> }): T {
     val client = WebClient.create(vertx)
-    return Proxy.newProxyInstance(T::class.java.classLoader, arrayOf(T::class.java)) { _, method, args: Array<Any?> ->
-        val lastArg = args.lastOrNull()
-        if (lastArg is Continuation<*>) {
-            // The last argument of a suspend function is the Continuation object
-            @Suppress("UNCHECKED_CAST") val cont = lastArg as Continuation<Any?>
-            val argsButLast = args.take(args.size - 1)
-            // Send request to the given channel on the event bus
-            client.postAbs(endpoint)
-                    .apply { requestBuilder(this) }
-                    .putHeader("content-type", "")
-                    .sendBuffer(RpcRequest(name, method.name, argsButLast.toTypedArray()).toBuffer()) {
-                        if (it.succeeded()) {
-                            cont.resume(it.result().bodyAsBuffer().toRpcResponse().response)
-                        } else {
-                            cont.resumeWithException(it?.cause() ?: Exception("Unknown error"))
-                        }
+    return getProxyWithBlock(name) { req, cont ->
+        client.postAbs(endpoint)
+                .apply { requestBuilder(this) }
+                .putHeader("content-type", "")
+                .sendBuffer(req.toBuffer()) {
+                    if (it.succeeded()) {
+                        cont.resume(it.result().bodyAsBuffer().toRpcResponse().response)
+                    } else {
+                        cont.resumeWithException(it?.cause() ?: Exception("Unknown error"))
                     }
-            // Suspend the coroutine to wait for the reply
-            COROUTINE_SUSPENDED
-        } else {
-            // The function is not suspend
-            null
-        }
-    } as T
+                }
+    }
 }
 
 /**

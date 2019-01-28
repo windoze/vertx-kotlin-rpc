@@ -7,6 +7,11 @@ import io.vertx.kotlin.coroutines.dispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+/**
+ * Vertx HTTP routing handler to host RPC services
+ * @constructor Create handler
+ * @param vertx Vertx instance
+ */
 class HttpRpcHandler(private val vertx: Vertx) : Handler<RoutingContext>, CoroutineScope {
     private val services: HashMap<String, RpcServiceInstance> = hashMapOf()
 
