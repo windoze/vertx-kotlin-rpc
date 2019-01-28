@@ -114,7 +114,7 @@ vertx.deployVerticle((new RpcServerVerticle("test-channel"))
 Java没有suspend函数，所以服务接口中的每个方法必须返回`Future<T>`而不是`T`。
 ```Java
 import io.vertx.core.Future;
-import codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncServiceProxy;
+import static codes.unwritten.vertx.kotlin.rpc.AsyncServiceProxyFactory.getAsyncServiceProxy;
 
 // ...
 

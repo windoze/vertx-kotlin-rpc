@@ -110,7 +110,7 @@ Java doesn't have suspend functions, make sure every function in the service
 interface returns `Future<T>` instead of `T`.
 ```Java
 import io.vertx.core.Future;
-import codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory;
+import static codes.unwritten.vertx.kotlin.rpc.ServiceProxyFactory.getAsyncServiceProxy;
 
 // ...
 
@@ -121,7 +121,7 @@ interface AsyncHelloSvc {
 
 // ...
 
-AsyncHelloSvc svc = ServiceProxyFactory.getAsyncServiceProxy(vertx, "test-channel", "hello", AsyncHelloSvc.class);
+AsyncHelloSvc svc = getAsyncServiceProxy(vertx, "test-channel", "hello", AsyncHelloSvc.class);
 svc.hello("world").setHandler(ar -> {
     if (ar.succeeded()) {
         assertEquals("Hello, world!", ar.result());
