@@ -16,14 +16,14 @@ Maven:
 <dependency>
     <groupId>codes.unwritten</groupId>
     <artifactId>vertx-kotlin-rpc</artifactId>
-    <version>0.5</version>
+    <version>0.6</version>
     <type>pom</type>
 </dependency>
 ```
 
 Gradle:
 ```Groovy
-compile 'codes.unwritten:vertx-kotlin-rpc:0.5'
+compile 'codes.unwritten:vertx-kotlin-rpc:0.6'
 ```
 <hr>
 
