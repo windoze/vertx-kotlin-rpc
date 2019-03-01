@@ -238,6 +238,7 @@ Notes
 
 * JSON RPC使用[Jackson](https://github.com/FasterXML/jackson)进行序列化和反序列化。 
 * 所有其它的参数和返回值都由[Kryo](https://github.com/EsotericSoftware/kryo)进行序列化和反序列化，请参阅文档以了解更多的细节。
+* Java反射API不能获取方法的参数名称，而这是JSON RPC必须的功能，所以JSON RPC目前无法支持Java。如果你有什么好主意请告诉我。
 
 TODO
 ----
