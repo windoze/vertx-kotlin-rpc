@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.6
+---
+
+* JSON RPC client.
+
 0.5
 ---
 

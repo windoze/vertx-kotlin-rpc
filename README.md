@@ -113,6 +113,42 @@ assertEqual("Hello, world!", svc.hello("world"))
 
 ```
 
+To call a JSON RPC service
+--------------------------
+
+```kotlin
+import codes.unwritten.vertx.kotlin.rpc.HttpRequest
+import codes.unwritten.vertx.kotlin.rpc.JsonRpcException
+import codes.unwritten.vertx.kotlin.rpc.QueryParam
+import codes.unwritten.vertx.kotlin.rpc.getHttpJsonRpcServiceProxy
+
+interface DemoSvc {
+    // Must be suspend, otherwise exceptions will be thrown on invocation.
+    // HttpRequest annotation is used to customize mapping
+    // Default method is POST and default path is the method name
+    @HttpRequest(method = HttpMethod.GET, path = "comments")
+    suspend fun getComments(postId: Int): List<Comment>
+}
+
+// ...
+
+// Get the service proxy object from a URL
+val svc = getHttpJsonRpcServiceProxy<PostmanSvc>(vertx, "https://postman-echo.com/")
+// Call the service
+context.assertTrue(svc.getComments(1).isNotEmpty())
+```
+
+Another example:
+
+```
+interface PostmanSvc {
+    @HttpRequest(method = HttpMethod.GET)
+    // QueryParam annotation indicates it is a query parameter instead of part of request body,
+    // Also param name can be customized
+    suspend fun get(@QueryParam foo1: String, @QueryParam("foo2") arg2: String): PostmanResponse
+}
+```
+
 To create a RPC service in Java
 -------------------------------
 ```java
@@ -198,11 +234,15 @@ svc.hello("world").setHandler(ar -> {
 Notes
 -----
 
-All arguments and returned values are serialized/deserialized by [Kryo](https://github.com/EsotericSoftware/kryo),
+* JSON RPC use [Jackson](https://github.com/FasterXML/jackson) for serialization/deserialization. 
+* All other arguments and returned values are serialized/deserialized by [Kryo](https://github.com/EsotericSoftware/kryo),
 refer to its documentations for more details.
+* Java Reflection API cannot retrieve function parameter names, which is required to build JSON object, so Java version of JSON RPC is unavailable.
+Tell me if you have any ideas.
 
 TODO
 ----
 
 * Function overloading support.
 * Call tracing and debugging.
+* JSON RPC needs to support path parameters, which is used by many REST API.

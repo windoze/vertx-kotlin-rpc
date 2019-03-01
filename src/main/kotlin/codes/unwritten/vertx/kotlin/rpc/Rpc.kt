@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package codes.unwritten.vertx.kotlin.rpc
 
 import com.esotericsoftware.kryo.Kryo

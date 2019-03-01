@@ -104,7 +104,7 @@ class SomeVerticle: CoroutineVerticle() {
 import codes.unwritten.vertx.kotlin.rpc.getHttpServiceProxy
 
 interface HelloSvc {
-    // Must be suspend, otherwise exceptions will be thrown on invocation.
+    // 成员函数必须是suspend，否则在调用的时候会抛出异常
     suspend fun hello(name: String): String
 }
 
@@ -115,6 +115,42 @@ val svc = getHttpServiceProxy<HelloSvc>(vertx, "http://127.0.0.1:8080/some-path"
 // 调用HTTP RPC服务
 assertEqual("Hello, world!", svc.hello("world"))
 
+```
+
+在Kotlin中调用JSON RPC service
+--------------------------
+
+```kotlin
+import codes.unwritten.vertx.kotlin.rpc.HttpRequest
+import codes.unwritten.vertx.kotlin.rpc.JsonRpcException
+import codes.unwritten.vertx.kotlin.rpc.QueryParam
+import codes.unwritten.vertx.kotlin.rpc.getHttpJsonRpcServiceProxy
+
+interface DemoSvc {
+    // 成员函数必须是suspend，否则在调用的时候会抛出异常
+    // HttpRequest annotation可以用了定制映射
+    // 缺省的方法是POST，缺省路径是方法名
+    @HttpRequest(method = HttpMethod.GET, path = "comments")
+    suspend fun getComments(postId: Int): List<Comment>
+}
+
+// ...
+
+// 用指定的URL创建服务的Proxy对象
+val svc = getHttpJsonRpcServiceProxy<PostmanSvc>(vertx, "https://postman-echo.com/")
+// 调用JSON RPC服务
+context.assertTrue(svc.getComments(1).isNotEmpty())
+```
+
+Query Param示例：
+
+```
+interface DemoSvc {
+    @HttpRequest(method = HttpMethod.POST, path="somepath")
+    // QueryParam annotation表明这个参数是query parameter而不是body的一部分，也可以指定参数名称
+    // foo3将会作为body的一部分被发往server
+    suspend fun someMethod(@QueryParam foo1: String, @QueryParam("foo2") arg2: String, foo3: String): SomeResponse
+}
 ```
 
 在Java中创建RPC service
@@ -200,10 +236,12 @@ svc.hello("world").setHandler(ar -> {
 Notes
 -----
 
-所有的参数和返回值都由[Kryo](https://github.com/EsotericSoftware/kryo)进行序列化和反序列化，请参阅文档以了解更多的细节。
+* JSON RPC使用[Jackson](https://github.com/FasterXML/jackson)进行序列化和反序列化。 
+* 所有其它的参数和返回值都由[Kryo](https://github.com/EsotericSoftware/kryo)进行序列化和反序列化，请参阅文档以了解更多的细节。
 
 TODO
 ----
 
 * 支持方法重载
 * RPC调用跟踪
+* JSON RPC支持路径参数
